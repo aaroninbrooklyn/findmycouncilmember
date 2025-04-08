@@ -15,13 +15,14 @@
       border-radius: 5px;
       background-color: white;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      font-size: 14px;
     }
     .popup-content strong {
-      font-size: 1.1em;
+      font-size: 1em;
       color: #2c3e50;
     }
     .popup-content img {
-      max-width: 280px;
+      max-width: 260px;
       height: auto;
       border-radius: 4px;
       margin-top: 10px;
@@ -31,7 +32,6 @@
     .mapboxgl-popup-content { cursor: grab; }
     .mapboxgl-popup-content:active { cursor: grabbing; }
 
-    /* Instruction box styling */
     #instructions-container {
       position: absolute;
       top: 20px;
@@ -67,7 +67,7 @@
 <body>
   <div id="map"></div>
 
-  <!-- Instruction Overlay -->
+  <!-- Instructions Box -->
   <div id="instructions-container">
     <button id="close-instructions" aria-label="Close instructions">×</button>
     <img src="https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/MapInstructionsImage.jpg" alt="Map Instructions">
@@ -99,43 +99,25 @@
     let hoverPopup = null;
 
     map.on('load', () => {
-      map.on('click', 'bplcouncilmap', (e) => {
-        if (hoverPopup) {
-          hoverPopup.remove();
-          hoverPopup = null;
-        }
+      map.on('mouseenter', 'updated-help-sheet-with-corre-4dw64w', (e) => {
+        map.getCanvas().style.cursor = 'pointer';
 
         const props = e.features[0].properties;
         const lngLat = e.lngLat;
 
         const branchName = props["Branch Name"] || 'Branch name unavailable';
-        const councilMember = props["Council Member Name"] || 'Unavailable';
-        const officeAddress = props["District Office Address"] || 'Unavailable';
+        const address = props["Branch Address"] || 'No address provided';
+        const councilDistrict = props["Council District "] || 'Unavailable';
         const photoUrl = props["CM Photo"] || '';
 
         const popupHTML = `
           <div class="popup-content">
-            <strong>${branchName}</strong><br/><br/>
-            <strong>Represented by:</strong><br/>
-            <strong>Council Member:</strong> ${councilMember}<br/>
-            <strong>District Office Address:</strong> ${officeAddress}<br/><br/>
-            ${photoUrl ? `<img src="${photoUrl}" alt="Council Member Photo">` : ''}
+            <strong>${branchName}</strong><br/>
+            ${address}<br/>
+            <strong>Council District:</strong> ${councilDistrict}<br/><br/>
+            ${photoUrl ? `<img src="${photoUrl}" alt="Council Member Photo" onerror="this.style.display='none'">` : ''}
           </div>
         `;
-
-        new mapboxgl.Popup()
-          .setLngLat(lngLat)
-          .setHTML(popupHTML)
-          .addTo(map);
-      });
-
-      map.on('mouseenter', 'bplcouncilmap', (e) => {
-        map.getCanvas().style.cursor = 'pointer';
-        const props = e.features[0].properties;
-        const lngLat = e.lngLat;
-        const branchName = props["Branch Name"] || 'Branch name unavailable';
-
-        const popupHTML = `<div class="popup-content"><strong>${branchName}</strong></div>`;
 
         if (hoverPopup) hoverPopup.remove();
 
@@ -149,7 +131,7 @@
           .addTo(map);
       });
 
-      map.on('mouseleave', 'bplcouncilmap', () => {
+      map.on('mouseleave', 'updated-help-sheet-with-corre-4dw64w', () => {
         map.getCanvas().style.cursor = '';
         if (hoverPopup) {
           hoverPopup.remove();
@@ -158,7 +140,7 @@
       });
     });
 
-    // Close instructions box
+    // Close instructions overlay
     document.getElementById('close-instructions').addEventListener('click', () => {
       document.getElementById('instructions-container').style.display = 'none';
     });
