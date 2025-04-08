@@ -19,13 +19,12 @@
             color: #2c3e50;
         }
         .popup-content img {
-            max-width: 280px; /* Slightly reduced max-width */
+            max-width: 280px;
             height: auto;
             border-radius: 4px;
             margin-top: 10px;
             border: 1px solid #ddd;
         }
-        /* Style for the draggable instruction popup */
         .mapboxgl-popup-content {
             cursor: grab;
         }
@@ -37,6 +36,9 @@
 <body>
     <div id="map"></div>
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css" />
+
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
 
@@ -57,11 +59,10 @@
         map.addControl(geocoder);
         map.addControl(new mapboxgl.NavigationControl());
 
-        let hoverPopup = null; // To store the hover popup instance
+        let hoverPopup = null;
 
         map.on('load', () => {
-            // Display instruction image as a popup on map load
-            const instructionsImageUrl = 'https://github.com/aaroninbrooklyn/findmycouncilmember/raw/d03398cb91580f629c99d3c6d76c3d0e5c2b345b/assets/MapInstructionsImage.jpg'; // Use the raw URL
+            const instructionsImageUrl = 'https://github.com/aaroninbrooklyn/findmycouncilmember/raw/d03398cb91580f629c99d3c6d76c3d0e5c2b345b/assets/MapInstructionsImage.jpg';
 
             const instructionPopup = new mapboxgl.Popup({
                 closeButton: false,
@@ -73,60 +74,52 @@
             .setHTML(`<div class="popup-content"><img src="${instructionsImageUrl}" alt="Map Instructions" style="max-width: 300px; border: 1px solid #ccc; border-radius: 5px;"></div>`)
             .addTo(map);
 
-
-            // Make the instruction popup draggable
             let isDragging = false;
             let startX, startY, startLngLat;
-            const popupElement = instructionPopup.getElement(); // Get the popup element
+            const popupElement = instructionPopup.getElement();
 
-            popupElement.style.cursor = 'grab';
+            if (popupElement) {
+                popupElement.style.cursor = 'grab';
 
-            popupElement.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                startLngLat = instructionPopup.getLngLat();
-                popupElement.style.cursor = 'grabbing';
-            });
+                popupElement.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startLngLat = instructionPopup.getLngLat();
+                    popupElement.style.cursor = 'grabbing';
+                });
 
-            map.on('mousemove', (e) => {
-                if (!isDragging) return;
-                const dx = e.clientX - startX;
-                const dy = e.clientY - startY;
+                map.on('mousemove', (e) => {
+                    if (!isDragging) return;
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
 
-                const container = map.getContainer();
-                const containerRect = container.getBoundingClientRect();
-                const width = containerRect.width;
-                const height = containerRect.height;
+                    const container = map.getContainer();
+                    const containerRect = container.getBoundingClientRect();
+                    const width = containerRect.width;
+                    const height = containerRect.height;
 
-                // Convert pixel movement to map coordinates, taking into account map's bounds
-                const center = map.getCenter();
-                const zoom = map.getZoom();
-                const bearing = map.getBearing();
-                const pitch = map.getPitch();
+                    const center = map.getCenter();
+                    const zoom = map.getZoom();
+                    const bearing = map.getBearing();
+                    const pitch = map.getPitch();
 
-                // Project the current center point to pixel coordinates
-                const centerPixel = map.project(center);
+                    const centerPixel = map.project(center);
+                    const newPixel = [centerPixel.x + dx, centerPixel.y + dy];
+                    const newCenter = map.unproject(newPixel);
 
-                // Calculate new pixel coordinates based on the drag offset
-                const newPixel = [centerPixel.x + dx, centerPixel.y + dy];
+                    instructionPopup.setLngLat(newCenter);
+                });
 
-                // Unproject the new pixel coordinates to get the new center
-                const newCenter = map.unproject(newPixel);
-
-                instructionPopup.setLngLat(newCenter);
-            });
-
-            document.addEventListener('mouseup', () => {
-                if (isDragging) {
-                    isDragging = false;
-                    popupElement.style.cursor = 'grab';
-                }
-            });
+                document.addEventListener('mouseup', () => {
+                    if (isDragging) {
+                        isDragging = false;
+                        popupElement.style.cursor = 'grab';
+                    }
+                });
+            }
 
 
-
-            // Click on BPL Council layer
             map.on('click', 'bplcouncilmap', (e) => {
                 const props = e.features[0].properties;
                 const lngLat = e.lngLat;
