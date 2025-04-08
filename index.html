@@ -11,7 +11,8 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            color: #333;
         }
 
         /* Map container styling */
@@ -25,17 +26,25 @@
 
         /* Popup styling */
         .popup-content {
-            padding: 10px;
-            border-radius: 5px;
+            padding: 12px; /* Slightly more padding */
+            border-radius: 6px; /* Slightly larger radius */
             background-color: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15); /* Softer shadow */
             font-size: 14px;
             max-width: 280px;
             word-wrap: break-word;
+            line-height: 1.4;
         }
         .popup-content strong {
             font-size: 1em;
-            color: #2c3e50;
+            color: #1a5f9e; /* A slightly different blue */
+            display: block; /* Make strong elements block */
+            margin-bottom: 4px; /* Add space below strong elements */
+        }
+         .popup-content .address { /* Style for address line */
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 8px; /* Space below address */
         }
         .popup-content img {
             max-width: 100%;
@@ -56,15 +65,15 @@
         /* Instructions box styling */
         #instructions-container {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 15px; /* Adjusted position */
+            left: 15px;
             z-index: 10;
-            background: white;
+            background: rgba(255, 255, 255, 0.95); /* Slightly transparent background */
             border: 1px solid #ccc;
             padding: 15px;
             border-radius: 8px;
             max-width: 320px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15); /* Enhanced shadow */
             font-size: 14px;
             line-height: 1.5;
         }
@@ -80,36 +89,58 @@
         #close-instructions {
             background: none;
             border: none;
-            font-size: 20px;
+            font-size: 22px; /* Slightly larger close button */
             font-weight: bold;
             position: absolute;
             top: 5px;
             right: 10px;
             cursor: pointer;
-            color: #555;
+            color: #777; /* Softer color */
+            padding: 2px; /* Add padding for easier clicking */
+            line-height: 1;
         }
         #close-instructions:hover {
             color: #000;
         }
 
-        /* Error message styling */
+        /* Error/Warning message styling */
+        .map-message-overlay {
+             position: absolute;
+             top: 50%;
+             left: 50%;
+             transform: translate(-50%, -50%);
+             padding: 25px;
+             text-align: center;
+             max-width: 80%;
+             border-radius: 8px;
+             z-index: 20; /* Ensure it's above other controls */
+             font-size: 16px;
+             line-height: 1.6;
+        }
         .error-message {
-             padding:30px;
-             text-align:center;
-             color:red;
-             background-color: #ffebeb;
-             border: 1px solid red;
-             margin: 20px;
-             border-radius: 5px;
+             color: #a94442; /* Dark red */
+             background-color: #f2dede; /* Light red */
+             border: 1px solid #ebccd1; /* Reddish border */
         }
         .warning-message {
-             padding:30px;
-             text-align:center;
-             color:orange;
-             background-color: #fffbeb;
-             border: 1px solid orange;
-             margin: 20px;
-             border-radius: 5px;
+             color: #8a6d3b; /* Dark orange/brown */
+             background-color: #fcf8e3; /* Light yellow */
+             border: 1px solid #faebcc; /* Yellowish border */
+        }
+        .map-message-overlay code { /* Style for code elements in messages */
+            background-color: rgba(0,0,0,0.05);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        /* Style the geocoder input */
+        .mapboxgl-ctrl-geocoder {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            border-radius: 6px;
+        }
+        .mapboxgl-ctrl-geocoder input[type='text'] {
+            border-radius: 6px;
         }
 
     </style>
@@ -118,8 +149,7 @@
     <div id="map"></div>
 
     <div id="instructions-container">
-        <button id="close-instructions" aria-label="Close instructions">×</button>
-        <img src="https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/MapInstructionsImage.jpg" alt="Map instructions. Hover over a library to see Council District info." onerror="this.style.display='none'; this.alt='Image failed to load';">
+        <button id="close-instructions" aria-label="Close instructions">&times;</button> <img src="https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/MapInstructionsImage.jpg" alt="Map instructions. Hover over a library to see Council District info." onerror="this.style.display='none'; this.alt='Image failed to load';">
         <p>Hover over a library branch to see its Council District. Use the search bar for specific addresses.</p>
     </div>
 
@@ -130,109 +160,144 @@
         // Your Mapbox access token
         mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
 
+        // --- Layer ID confirmed from your screenshot ---
+        // This is the layer the code will listen to for hover events.
+        const interactiveLayerId = 'updated_help_sheet_with_corre-4dw64w';
+
+        // Variable to hold the hover popup instance
+        let hoverPopup = null;
+
         // Initialize the map
         const map = new mapboxgl.Map({
-            container: 'map', // container ID
-            style: 'mapbox://styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy', // Your style URL
-            center: [-73.95, 40.65], // starting position [lng, lat]
-            zoom: 11 // starting zoom
+            container: 'map', // The ID of the div where the map will be rendered
+            style: 'mapbox://styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy', // Your Mapbox style URL
+            center: [-73.95, 40.65], // Initial map center [longitude, latitude] (NYC area)
+            zoom: 11 // Initial map zoom level
         });
 
-        // --- IMPORTANT: Use the CORRECT Layer ID from your Mapbox Studio style ---
-        const interactiveLayerId = 'updated_help_sheet_with_corre-4dw64w'; // Corrected Layer ID
-        let hoverPopup = null; // Variable to hold the popup
-
-        // Add Geocoder control (search box)
+        // Add Geocoder control (address search box)
         map.addControl(new MapboxGeocoder({
-            accessToken: mapboxgl.accessToken,
-            mapboxgl: mapboxgl,
-            marker: false, // Do not place a marker on search result
-            placeholder: 'Search for an address'
-        }), 'top-left'); // Position control
+            accessToken: mapboxgl.accessToken, // Use the same access token
+            mapboxgl: mapboxgl,               // Pass the mapboxgl object
+            marker: false,                    // Don't automatically add a marker on search
+            placeholder: 'Search NYC address' // Custom placeholder text
+        }), 'top-left');                      // Position the control
 
-        // Add navigation control (zoom buttons)
-        map.addControl(new mapboxgl.NavigationControl(), 'top-right'); // Position control
+        // Add navigation control (zoom in/out buttons)
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right'); // Position the control
 
-        // Actions to perform once the map style has loaded
+        // --- Map Event Listeners ---
+
+        // Function to display messages on the map
+        function displayMapMessage(message, type = 'error') {
+            // Remove any existing message
+            const existingMessage = document.getElementById('map-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            // Create new message element
+            const messageDiv = document.createElement('div');
+            messageDiv.id = 'map-message';
+            messageDiv.className = `map-message-overlay ${type}-message`; // Apply styling based on type
+            messageDiv.innerHTML = message; // Set the message content (allows basic HTML)
+            map.getContainer().appendChild(messageDiv); // Add message to map container
+        }
+
+        // Runs when the map's style has finished loading
         map.on('load', () => {
             console.log('Map style loaded.');
 
-            // Check if the specified interactive layer exists in the loaded style
+            // CRITICAL CHECK: Verify the interactive layer exists in the loaded style
             if (!map.getLayer(interactiveLayerId)) {
-                // Log an error if the layer is not found
-                console.error(`Layer "${interactiveLayerId}" not found.`);
-                // Display an error message to the user on the map
-                document.getElementById('map').innerHTML = `<div class="error-message">Error: Required data layer ('${interactiveLayerId}') not found in map style. Please verify the Layer ID in your code matches the one in Mapbox Studio.</div>`;
-                return; // Stop further execution if layer is missing
+                const errorMsg = `Error: The required layer (<code>${interactiveLayerId}</code>) was not found in the Mapbox style. Please ensure this Layer ID is correct and exists in your style: <a href="https://studio.mapbox.com/styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy/layer/${interactiveLayerId}/" target="_blank">Check Layer in Studio</a>`;
+                console.error(errorMsg.replace(/<[^>]*>?/gm, '')); // Log plain text error
+                displayMapMessage(errorMsg, 'error'); // Show formatted error on map
+                return; // Stop execution if layer is missing
+            } else {
+                 console.log(`Successfully found layer: ${interactiveLayerId}`);
             }
 
-            // When the mouse enters the interactive layer
+            // --- Popup Logic ---
+
+            // When the mouse pointer enters the area of a feature in the interactive layer
             map.on('mouseenter', interactiveLayerId, (e) => {
-                map.getCanvas().style.cursor = 'pointer'; // Change cursor to pointer
-                // Ensure there are features under the cursor
-                if (!e.features.length) return;
+                map.getCanvas().style.cursor = 'pointer'; // Change cursor to indicate interactivity
 
-                // Get properties of the hovered feature
+                // Check if features exist at the event location
+                if (!e.features || e.features.length === 0) {
+                    return; // Exit if no features found
+                }
+
+                // Get properties and coordinates from the first feature found
                 const props = e.features[0].properties;
-                // Get coordinates of the hovered feature
-                const lngLat = e.lngLat;
+                const lngLat = e.lngLat; // Use precise event coordinates for popup
 
-                // Extract data from properties, providing fallbacks
-                const branchName = props["Branch Name"] || 'Branch name unavailable';
-                const address = props["Branch Address"] || 'No address';
-                // Handle potential variations in the Council District property name
+                // Extract data from properties, providing default values if missing
+                const branchName = props["Branch Name"] || 'Name unavailable';
+                const address = props["Branch Address"] || 'Address unavailable';
+                // Handle potential variations in the Council District property name (case-insensitive check might be better if needed)
                 const councilDistrict = props["Council District "] || props["Council District"] || 'Unknown';
                 const photoUrl = props["CM Photo"] || ''; // Council Member photo URL
 
-                // Construct HTML content for the popup
+                // Construct HTML content for the popup using template literals
                 const popupHTML = `
                     <div class="popup-content">
-                        <strong>${branchName}</strong><br/>
-                        ${address}<br/>
-                        <strong>Council District:</strong> ${councilDistrict}<br/>
-                        ${photoUrl ? `<img src="${photoUrl}" alt="Council District ${councilDistrict}" onerror="this.style.display='none';">` : ''}
+                        <strong>${branchName}</strong>
+                        <div class="address">${address}</div>
+                        <strong>Council District: ${councilDistrict}</strong>
+                        ${photoUrl ? `<img src="${photoUrl}" alt="Photo for Council District ${councilDistrict}" onerror="this.style.display='none'; this.previousSibling.textContent+=' (Image failed)';">` : ''}
                     </div>
-                `;
+                `; // Added better image error handling
 
-                // Remove existing popup if there is one
-                if (hoverPopup) hoverPopup.remove();
+                // Remove the previous popup instance if it exists
+                if (hoverPopup) {
+                    hoverPopup.remove();
+                }
 
-                // Create and display a new popup
+                // Create a new popup
                 hoverPopup = new mapboxgl.Popup({
-                        closeButton: false,      // No close button on hover popup
-                        closeOnClick: false,     // Don't close when map is clicked
-                        offset: [0, -15]         // Offset popup slightly above the point
+                        closeButton: false,      // No close 'x' button on the popup
+                        closeOnClick: false,     // Popup stays open even if map is clicked
+                        offset: [0, -15],        // Position popup slightly above the point feature
+                        maxWidth: '280px'        // Explicit max width
                     })
-                    .setLngLat(lngLat)           // Set popup location
-                    .setHTML(popupHTML)          // Set popup content
-                    .addTo(map);                 // Add popup to map
+                    .setLngLat(lngLat)           // Set the geographical location of the popup
+                    .setHTML(popupHTML)          // Set the HTML content of the popup
+                    .addTo(map);                 // Add the popup to the map
             });
 
-            // When the mouse leaves the interactive layer
+            // When the mouse pointer leaves the area of a feature in the interactive layer
             map.on('mouseleave', interactiveLayerId, () => {
-                map.getCanvas().style.cursor = ''; // Reset cursor
+                map.getCanvas().style.cursor = ''; // Reset the cursor style
                 // Remove the popup if it exists
                 if (hoverPopup) {
                     hoverPopup.remove();
-                    hoverPopup = null;
+                    hoverPopup = null; // Clear the reference
                 }
             });
         });
 
-        // Handle map errors
+        // General error handler for the map
         map.on('error', (e) => {
-            console.error('Mapbox error:', e.error?.message || e);
-            // Specifically check for the "Bare objects invalid" error related to style issues
+            console.error('Mapbox GL Error:', e.error?.message || e);
+
+            // Specifically check for the style-related "Bare objects invalid" error
             if (e.error && e.error.message.includes("Bare objects invalid")) {
-                // Display a specific warning about the style issue
-                 document.getElementById('map').innerHTML = `<div class="warning-message">Map Warning: The map style ('${map.getStyle().id}') has an issue that needs fixing in Mapbox Studio. Check layers using 'icon-image' or similar properties; expressions must always return a string. Error details: ${e.error.message}</div>`;
+                 const warningMsg = `Map Style Warning: There's an issue in the Mapbox style (<code>${map.getStyle().id || 'current style'}</code>) that needs fixing in Mapbox Studio. This usually involves an <code>icon-image</code> or similar property expression not always returning a string. <a href="https://studio.mapbox.com/" target="_blank">Open Mapbox Studio</a> <br><small>Details: ${e.error.message}</small>`;
+                 displayMapMessage(warningMsg, 'warning'); // Show formatted warning on map
+            } else if (e.error) {
+                 // Display a generic error message for other map errors
+                 displayMapMessage(`An unexpected map error occurred: ${e.error.message}`, 'error');
             }
         });
 
-        // Add event listener to close the instructions box
+        // --- UI Event Listeners ---
+
+        // Add event listener to the close button on the instructions panel
         document.getElementById('close-instructions').addEventListener('click', () => {
             document.getElementById('instructions-container').style.display = 'none';
         });
+
     </script>
 </body>
 </html>
