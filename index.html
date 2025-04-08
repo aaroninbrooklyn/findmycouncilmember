@@ -1,62 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>BPL Branches + Council Districts Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
-  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" rel="stylesheet" />
-  <style>
-    body { margin: 0; padding: 0; font-family: sans-serif; }
-    #map { width: 100vw; height: 100vh; }
-
-    .mapboxgl-popup-content {
-      font: 14px/1.4 sans-serif;
-    }
-
-    /* Instruction overlay styles */
-    #instructions-container {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 10;
-      background: white;
-      border: 1px solid #ccc;
-      padding: 8px;
-      border-radius: 6px;
-      max-width: 320px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    }
-
-    #instructions-container img {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    #close-instructions {
-      background: none;
-      border: none;
-      font-size: 18px;
-      position: absolute;
-      top: 4px;
-      right: 8px;
-      cursor: pointer;
-      color: #333;
-    }
-  </style>
-</head>
-<body>
-<div id="map"></div>
-
-<!-- Instruction Overlay -->
-<div id="instructions-container">
-  <button id="close-instructions" aria-label="Close instructions">×</button>
-  <img src="https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/db0e8c6d916d72d8f6f0412bb897a7248d8bb55c/assets/MapInstructionsImage.jpg" alt="Map Instructions">
-</div>
-
 <script>
   mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
 
@@ -78,25 +19,22 @@
   map.addControl(new mapboxgl.NavigationControl());
 
   map.on('load', () => {
-    // Popup on click
-    map.on('click', 'bpl-branch-labels', (e) => {
+    // Click on BPL Council layer
+    map.on('click', 'bplcouncilmap', (e) => {
       const props = e.features[0].properties;
       const lngLat = e.lngLat;
 
-      const branchName = props.branch || 'Branch name unavailable';
-      const address = props.address || 'No address provided';
-      const amenities = props.Amenities || 'Not listed';
-      const councilDistrict = props.CouncilDistrict || 'Not listed';
-      const subway = props.subway || '';
-      const bus = props.bus || '';
-      const transit = [subway, bus].filter(Boolean).join(', ') || 'No nearby transit listed';
+      const branchName = props["Branch Name"] || 'Branch name unavailable';
+      const councilMember = props["Council Member Name"] || 'Unavailable';
+      const officeAddress = props["District Office Address"] || 'Unavailable';
+      const photoUrl = props["CM Photo"] || '';
 
       const popupHTML = `
         <strong>${branchName}</strong><br/><br/>
-        <strong>Address:</strong> ${address}<br/>
-        <strong>Amenities:</strong> ${amenities}<br/>
-        <strong>Council District:</strong> ${councilDistrict}<br/>
-        <strong>How to get here:</strong> ${transit}
+        <strong>Represented by:</strong><br/>
+        <strong>Council Member:</strong> ${councilMember}<br/>
+        <strong>District Office Address:</strong> ${officeAddress}<br/><br/>
+        <img src="${photoUrl}" alt="Council Member Photo" style="width:100%; max-width:240px; border-radius:4px;">
       `;
 
       new mapboxgl.Popup()
@@ -105,52 +43,13 @@
         .addTo(map);
     });
 
-    map.on('mouseenter', 'bpl-branch-labels', () => {
+    map.on('mouseenter', 'bplcouncilmap', () => {
       map.getCanvas().style.cursor = 'pointer';
     });
-    map.on('mouseleave', 'bpl-branch-labels', () => {
+    map.on('mouseleave', 'bplcouncilmap', () => {
       map.getCanvas().style.cursor = '';
     });
   });
 
-  // Geocoder result: find council district
-  geocoder.on('result', (e) => {
-    const coords = e.result.geometry.coordinates;
-
-    if (window.searchMarker) window.searchMarker.remove();
-
-    window.searchMarker = new mapboxgl.Marker({ color: '#4264fb' })
-      .setLngLat(coords)
-      .addTo(map);
-
-    map.flyTo({ center: coords, zoom: 14 });
-
-    const point = map.project(coords);
-    const buffer = 4;
-
-    const features = map.queryRenderedFeatures([
-      [point.x - buffer, point.y - buffer],
-      [point.x + buffer, point.y + buffer]
-    ], {
-      layers: ['nyc-council-districts']
-    });
-
-    let popupText = `<strong>Address:</strong> ${e.result.place_name}<br/>`;
-
-    if (features.length > 0) {
-      const district = features[0].properties.CounDist || 'Unavailable';
-      popupText += `<strong>Council District:</strong> ${district}`;
-    } else {
-      popupText += `<em>No council district found here</em>`;
-    }
-
-    window.searchMarker.setPopup(new mapboxgl.Popup().setHTML(popupText)).togglePopup();
-  });
-
-  // Close instructions box
-  document.getElementById('close-instructions').addEventListener('click', () => {
-    document.getElementById('instructions-container').style.display = 'none';
-  });
+  // Optional: Keep geocoder logic as-is unless you want to show rep info there too
 </script>
-</body>
-</html>
