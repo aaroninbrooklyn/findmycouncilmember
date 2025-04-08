@@ -94,33 +94,41 @@
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg'; // Replace with your actual token
         const mapStyle = 'mapbox://styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy';
-        const targetLayerId = 'bpl-branches'; //  ID of the layer you want to interact with.
+        const targetLayerId = 'bpl-branches'; //  ID of the layer you want to interact with.  Make sure this is EXACTLY the layer name in Mapbox Studio.
 
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: mapStyle,
-            center: [-73.95, 40.65],
-            zoom: 11
-        });
+        let map; // Declare map variable outside the on('load') function
 
-        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-        map.addControl(new MapboxGeocoder({
-            accessToken: mapboxgl.accessToken,
-            mapboxgl: mapboxgl,
-            marker: false,
-            placeholder: 'Search NYC address'
-        }), 'top-left');
+        function initializeMap() {
+            map = new mapboxgl.Map({
+                container: 'map',
+                style: mapStyle,
+                center: [-73.95, 40.65],
+                zoom: 11
+            });
 
-        let hoverPopup = null;
+            map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+            map.addControl(new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl,
+                marker: false,
+                placeholder: 'Search NYC address'
+            }), 'top-left');
 
-        map.on('load', () => {
-            // Check if the layer exists *after* the map has loaded.  This is CRUCIAL.
-            if (!map.getLayer(targetLayerId)) {
-                console.error(`Layer "${targetLayerId}" not found in the map style!`);
-                alert(`Error: Layer "${targetLayerId}" not found.  Check the layer name in your Mapbox Studio style, and ensure it's added to the style.`);
-                return; // IMPORTANT: Stop execution if the layer doesn't exist.
-            }
+            map.on('load', () => {
+                console.log('Map loaded successfully!'); // Add this line for debugging
+                // Check if the layer exists *after* the map has loaded.  This is CRUCIAL.
+                if (!map.getLayer(targetLayerId)) {
+                    const errorMessage = `Layer "${targetLayerId}" not found in the map style!`;
+                    console.error(errorMessage);
+                    alert(`Error: ${errorMessage} Check the layer name in your Mapbox Studio style, and ensure it's added to the style.`);
+                    return; // IMPORTANT: Stop execution if the layer doesn't exist.
+                }
+                addLayerInteractivity(); // Call function to set up events
+            });
+        }
 
+
+        function addLayerInteractivity() {
             map.on('mouseenter', targetLayerId, (e) => {
                 map.getCanvas().style.cursor = 'pointer';
 
@@ -154,11 +162,14 @@
                     hoverPopup = null;
                 }
             });
-        });
+        }
 
         document.getElementById('close-instructions').addEventListener('click', () => {
             document.getElementById('instructions-container').style.display = 'none';
         });
+
+        // Initialize the map
+        initializeMap();
     </script>
 </body>
 </html>
