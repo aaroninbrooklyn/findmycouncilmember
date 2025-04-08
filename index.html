@@ -7,20 +7,23 @@
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
     <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" rel="stylesheet" />
     <style>
+        /* Basic body styling */
         body {
             margin: 0;
             padding: 0;
             font-family: sans-serif;
         }
 
+        /* Map container styling */
         #map {
             position: absolute;
             top: 0;
             bottom: 0;
             width: 100%;
-            background-color: #f0f0f0;
+            background-color: #f0f0f0; /* Placeholder background */
         }
 
+        /* Popup styling */
         .popup-content {
             padding: 10px;
             border-radius: 5px;
@@ -42,6 +45,7 @@
             border: 1px solid #ddd;
         }
 
+        /* Cursor styles for popup */
         .mapboxgl-popup-content {
             cursor: grab;
         }
@@ -49,6 +53,7 @@
             cursor: grabbing;
         }
 
+        /* Instructions box styling */
         #instructions-container {
             position: absolute;
             top: 20px;
@@ -86,6 +91,27 @@
         #close-instructions:hover {
             color: #000;
         }
+
+        /* Error message styling */
+        .error-message {
+             padding:30px;
+             text-align:center;
+             color:red;
+             background-color: #ffebeb;
+             border: 1px solid red;
+             margin: 20px;
+             border-radius: 5px;
+        }
+        .warning-message {
+             padding:30px;
+             text-align:center;
+             color:orange;
+             background-color: #fffbeb;
+             border: 1px solid orange;
+             margin: 20px;
+             border-radius: 5px;
+        }
+
     </style>
 </head>
 <body>
@@ -101,48 +127,64 @@
     <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
 
     <script>
+        // Your Mapbox access token
         mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
 
+        // Initialize the map
         const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy', // Corrected style URL
-            center: [-73.95, 40.65],
-            zoom: 11
+            container: 'map', // container ID
+            style: 'mapbox://styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy', // Your style URL
+            center: [-73.95, 40.65], // starting position [lng, lat]
+            zoom: 11 // starting zoom
         });
 
-        const interactiveLayerId = 'updated-help-sheet-with-corre-4dw64w';
-        let hoverPopup = null;
+        // --- IMPORTANT: Use the CORRECT Layer ID from your Mapbox Studio style ---
+        const interactiveLayerId = 'updated_help_sheet_with_corre-4dw64w'; // Corrected Layer ID
+        let hoverPopup = null; // Variable to hold the popup
 
+        // Add Geocoder control (search box)
         map.addControl(new MapboxGeocoder({
             accessToken: mapboxgl.accessToken,
             mapboxgl: mapboxgl,
-            marker: false,
+            marker: false, // Do not place a marker on search result
             placeholder: 'Search for an address'
-        }), 'top-left');
+        }), 'top-left'); // Position control
 
-        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        // Add navigation control (zoom buttons)
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right'); // Position control
 
+        // Actions to perform once the map style has loaded
         map.on('load', () => {
             console.log('Map style loaded.');
 
+            // Check if the specified interactive layer exists in the loaded style
             if (!map.getLayer(interactiveLayerId)) {
+                // Log an error if the layer is not found
                 console.error(`Layer "${interactiveLayerId}" not found.`);
-                document.getElementById('map').innerHTML = '<div style="padding:30px;text-align:center;color:red;">Error: Required data layer not found in map style.  Please ensure the layer ID is correct and the layer exists in your Mapbox style.</div>';
-                return;
+                // Display an error message to the user on the map
+                document.getElementById('map').innerHTML = `<div class="error-message">Error: Required data layer ('${interactiveLayerId}') not found in map style. Please verify the Layer ID in your code matches the one in Mapbox Studio.</div>`;
+                return; // Stop further execution if layer is missing
             }
 
+            // When the mouse enters the interactive layer
             map.on('mouseenter', interactiveLayerId, (e) => {
-                map.getCanvas().style.cursor = 'pointer';
+                map.getCanvas().style.cursor = 'pointer'; // Change cursor to pointer
+                // Ensure there are features under the cursor
                 if (!e.features.length) return;
 
+                // Get properties of the hovered feature
                 const props = e.features[0].properties;
+                // Get coordinates of the hovered feature
                 const lngLat = e.lngLat;
 
+                // Extract data from properties, providing fallbacks
                 const branchName = props["Branch Name"] || 'Branch name unavailable';
                 const address = props["Branch Address"] || 'No address';
+                // Handle potential variations in the Council District property name
                 const councilDistrict = props["Council District "] || props["Council District"] || 'Unknown';
-                const photoUrl = props["CM Photo"] || '';
+                const photoUrl = props["CM Photo"] || ''; // Council Member photo URL
 
+                // Construct HTML content for the popup
                 const popupHTML = `
                     <div class="popup-content">
                         <strong>${branchName}</strong><br/>
@@ -152,15 +194,24 @@
                     </div>
                 `;
 
+                // Remove existing popup if there is one
                 if (hoverPopup) hoverPopup.remove();
-                hoverPopup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: [0, -15] })
-                    .setLngLat(lngLat)
-                    .setHTML(popupHTML)
-                    .addTo(map);
+
+                // Create and display a new popup
+                hoverPopup = new mapboxgl.Popup({
+                        closeButton: false,      // No close button on hover popup
+                        closeOnClick: false,     // Don't close when map is clicked
+                        offset: [0, -15]         // Offset popup slightly above the point
+                    })
+                    .setLngLat(lngLat)           // Set popup location
+                    .setHTML(popupHTML)          // Set popup content
+                    .addTo(map);                 // Add popup to map
             });
 
+            // When the mouse leaves the interactive layer
             map.on('mouseleave', interactiveLayerId, () => {
-                map.getCanvas().style.cursor = '';
+                map.getCanvas().style.cursor = ''; // Reset cursor
+                // Remove the popup if it exists
                 if (hoverPopup) {
                     hoverPopup.remove();
                     hoverPopup = null;
@@ -168,13 +219,17 @@
             });
         });
 
+        // Handle map errors
         map.on('error', (e) => {
             console.error('Mapbox error:', e.error?.message || e);
+            // Specifically check for the "Bare objects invalid" error related to style issues
             if (e.error && e.error.message.includes("Bare objects invalid")) {
-                document.getElementById('map').innerHTML = '<div style="padding:30px;text-align:center;color:orange;">Map style has an issue. Please fix icon-image expressions in Mapbox Studio (must return a string).  This often happens when the expression returns null or a non-string.</div>';
+                // Display a specific warning about the style issue
+                 document.getElementById('map').innerHTML = `<div class="warning-message">Map Warning: The map style ('${map.getStyle().id}') has an issue that needs fixing in Mapbox Studio. Check layers using 'icon-image' or similar properties; expressions must always return a string. Error details: ${e.error.message}</div>`;
             }
         });
 
+        // Add event listener to close the instructions box
         document.getElementById('close-instructions').addEventListener('click', () => {
             document.getElementById('instructions-container').style.display = 'none';
         });
