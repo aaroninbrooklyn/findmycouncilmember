@@ -67,10 +67,10 @@
             const instructionPopup = new mapboxgl.Popup({
                 closeButton: false,
                 closeOnClick: false,
-                anchor: 'top-right',
-                offset: [20, 20]
+                anchor: 'top-left', // Change to top-left
+                offset: [20, 20] // Adjust offset as needed
             })
-            .setLngLat(map.getCenter())
+            .setLngLat([-74.05, 40.7])  // Set the LngLat to place it on the left, you may need to adjust
             .setHTML(`<div class="popup-content"><img src="${instructionsImageUrl}" alt="Map Instructions" style="max-width: 300px; border: 1px solid #ccc; border-radius: 5px;"></div>`)
             .addTo(map);
 
@@ -120,6 +120,7 @@
             }
 
 
+
             map.on('click', 'bplcouncilmap', (e) => {
                 const props = e.features[0].properties;
                 const lngLat = e.lngLat;
@@ -135,7 +136,7 @@
                         <strong>Represented by:</strong><br/>
                         <strong>Council Member:</strong> ${councilMember}<br/>
                         <strong>District Office Address:</strong> ${officeAddress}<br/><br/>
-                        ${photoUrl ? `<img src="${photoUrl}" alt="Council Member Photo">` : ''}
+                        ${photoUrl ? `<img src="${photoUrl}" alt="Council Member Photo" style="max-width: 280px;">` : ''}
                     </div>
                 `;
 
