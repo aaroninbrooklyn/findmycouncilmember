@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Find Your Council Member</title>
   <meta charset="utf-8" />
+  <title>Find Your Council Member</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" rel="stylesheet" />
   <style>
     body { margin: 0; padding: 0; font-family: sans-serif; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; background-color: #f0f0f0; }
@@ -152,7 +152,7 @@
     map.on('error', (e) => {
       console.error('Mapbox error:', e.error?.message || e);
       if (e.error && e.error.message.includes("Bare objects invalid")) {
-        document.getElementById('map').innerHTML = '<div style="padding:30px;text-align:center;color:orange;">Map style has an issue. Check Mapbox Studio for invalid expressions like bare objects not wrapped in ["literal", ...].</div>';
+        document.getElementById('map').innerHTML = '<div style="padding:30px;text-align:center;color:orange;">Map style has an issue. Please fix icon-image expressions in Mapbox Studio (must return a string).</div>';
       }
     });
 
