@@ -100,6 +100,11 @@
 
     map.on('load', () => {
       map.on('click', 'bplcouncilmap', (e) => {
+        if (hoverPopup) {
+          hoverPopup.remove();
+          hoverPopup = null;
+        }
+
         const props = e.features[0].properties;
         const lngLat = e.lngLat;
 
@@ -153,7 +158,7 @@
       });
     });
 
-    // Close button logic
+    // Close instructions box
     document.getElementById('close-instructions').addEventListener('click', () => {
       document.getElementById('instructions-container').style.display = 'none';
     });
