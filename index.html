@@ -2,140 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Find Your Council Member</title>
+  <title>Test Mapbox Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
-  <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
   <style>
-    body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
+    body { margin: 0; padding: 0; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-
-    #instructions-container {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      z-index: 10;
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid #ccc;
-      padding: 15px;
-      border-radius: 8px;
-      max-width: 320px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-
-    .popup-content {
-      padding: 12px;
-      border-radius: 6px;
-      background-color: white;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-      font-size: 14px;
-      max-width: 280px;
-      line-height: 1.4;
-    }
-
-    .popup-content strong { color: #1a5f9e; display: block; margin-bottom: 4px; }
-    .popup-content .address { font-size: 0.9em; color: #555; margin-bottom: 8px; }
-    .popup-content img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 4px;
-      margin-top: 10px;
-      border: 1px solid #ddd;
-    }
-
-    .map-message-overlay {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 20px;
-      background-color: #f2dede;
-      border: 1px solid #ebccd1;
-      border-radius: 8px;
-      color: #a94442;
-      font-size: 16px;
-      max-width: 90%;
-      z-index: 99;
-    }
   </style>
 </head>
 <body>
-
-<div id="map"></div>
-
-<div id="instructions-container">
-  <button id="close-instructions" aria-label="Close instructions">&times;</button>
-  <img src="https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/MapInstructionsImage.jpg" alt="Map instructions">
-  <p>Hover over a library branch to see its Council District. Use the search bar for specific addresses.</p>
-</div>
-
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
-<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
-
-<script>
-  mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
-
-  const interactiveLayerId = 'updated_help_sheet_with_corre-4dw64w';
-  let hoverPopup = null;
-
-  const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/streets-v12',
-    center: [-73.95, 40.65],
-    zoom: 11
-  });
-
-  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-  map.addControl(new MapboxGeocoder({
-    accessToken: mapboxgl.accessToken,
-    mapboxgl: mapboxgl,
-    placeholder: 'Search NYC address'
-  }), 'top-left');
-
-  function showMapMessage(msg) {
-    const existing = document.getElementById('map-message');
-    if (existing) existing.remove();
-    const div = document.createElement('div');
-    div.id = 'map-message';
-    div.className = 'map-message-overlay';
-    div.innerHTML = msg;
-    map.getContainer().appendChild(div);
-  }
-
-  map.on('load', () => {
-    console.log('Map loaded');
-    if (!map.getLayer(interactiveLayerId)) {
-      showMapMessage(`Error: Layer <code>${interactiveLayerId}</code> not found in the style. <a href="https://studio.mapbox.com/" target="_blank">Fix in Mapbox Studio</a>`);
-      return;
-    }
-
-    map.on('mouseenter', interactiveLayerId, (e) => {
-      map.getCanvas().style.cursor = 'pointer';
-      const props = e.features[0].properties || {};
-
-      let branchName = props["Branch Name"] || props.branch_name || 'Name unavailable';
-      let address = props["Branch Address"] || props.branch_address || 'Address unavailable';
-      let district = props["Council District"] || props.council_district || 'Unknown';
-      let photo = props["CM Photo"] || props.photo_url || '';
-
-      const html = `
-        <div class="popup-content">
-          <strong>${branchName}</strong>
-          <div class="address">${address}</div>
-          <strong>Council District: ${district}</strong>
-          ${photo ? `<img src="${photo}" alt="CM Photo" onerror="this.style.display='none';">` : ''}
-        </div>
-      `;
-
-      if (hoverPopup) hoverPopup.remove();
-      hoverPopup = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-        offset: [0, -15]
-      }).setLngLat(e.lngLat).setHTML(html).addTo(map);
+  <div id="map"></div>
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v12', // official Mapbox style
+      center: [-73.95, 40.65], // Brooklyn
+      zoom: 11
     });
-
-    map.on('mouseleave', interactiveLayerId, () => {
-      map.getCanvas().style.cursor = '';
-      if (hoverPopup) {
-        hover
+  </script>
+</body>
+</html>
