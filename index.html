@@ -5,13 +5,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css" />
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" />
   <style>
-    /* Basic body and map styling */
     body { margin: 0; padding: 0; font-family: sans-serif; }
-    #map { position: absolute; top: 0; bottom: 0; width: 100%; background-color: #f0f0f0; /* Background for loading state */ }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; background-color: #f0f0f0; }
 
-    /* Popup styling */
     .popup-content {
       padding: 10px;
       border-radius: 5px;
@@ -31,14 +29,11 @@
       border-radius: 4px;
       margin-top: 10px;
       border: 1px solid #ddd;
-      display: block;
     }
 
-    /* Cursor styles for popup */
     .mapboxgl-popup-content { cursor: grab; }
     .mapboxgl-popup-content:active { cursor: grabbing; }
 
-    /* Instructions box styling */
     #instructions-container {
       position: absolute;
       top: 20px;
@@ -56,13 +51,10 @@
     #instructions-container img {
       width: 100%;
       height: auto;
-      display: block;
       border-radius: 4px;
       margin-bottom: 10px;
     }
-     #instructions-container p {
-        margin: 0;
-     }
+    #instructions-container p { margin: 0; }
     #close-instructions {
       background: none;
       border: none;
@@ -73,12 +65,8 @@
       right: 10px;
       cursor: pointer;
       color: #555;
-      padding: 0;
-      line-height: 1;
     }
-     #close-instructions:hover {
-        color: #000;
-     }
+    #close-instructions:hover { color: #000; }
   </style>
 </head>
 <body>
@@ -86,8 +74,7 @@
 
   <div id="instructions-container">
     <button id="close-instructions" aria-label="Close instructions">×</button>
-    <img src="https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/MapInstructionsImage.jpg" alt="Map Instructions: Hover over a library branch to see Council District info. Use search bar for addresses."
-         onerror="this.onerror=null; this.alt='Instructions image failed to load.'; console.error('Failed to load instructions image.');">
+    <img src="https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/MapInstructionsImage.jpg" alt="Map instructions. Hover over a library to see Council District info." onerror="this.style.display='none'; this.alt='Image failed to load';">
     <p>Hover over a library branch to see its Council District. Use the search bar for specific addresses.</p>
   </div>
 
@@ -95,145 +82,84 @@
   <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
 
   <script>
-    // --- Configuration ---
-    mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg'; // Your Mapbox access token
-    const mapStyle = 'mapbox://styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy'; // Your custom style URL
-    const initialCenter = [-73.95, 40.65]; // Starting position [lng, lat] (Brooklyn)
-    const initialZoom = 11; // Starting zoom
-    // ***** CORRECTED LAYER ID HERE *****
-    const interactiveLayerId = 'updated_help_sheet_with_corre-4dw64w'; // Use underscore based on your layer list
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
 
-    // --- DOM Elements ---
-    const mapContainer = document.getElementById('map');
-    const closeButton = document.getElementById('close-instructions');
-    const instructionsContainer = document.getElementById('instructions-container');
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy',
+      center: [-73.95, 40.65],
+      zoom: 11
+    });
 
-    // --- State ---
-    let map = null; // Holds the map instance
-    let hoverPopup = null; // Holds the current hover popup instance
+    const interactiveLayerId = 'updated_help_sheet_with-corre-4dw64w';
+    let hoverPopup = null;
 
-    // --- Initialization ---
-    try {
-      // Initialize the map
-      map = new mapboxgl.Map({
-        container: mapContainer,
-        style: mapStyle,
-        center: initialCenter,
-        zoom: initialZoom
-      });
+    map.addControl(new MapboxGeocoder({
+      accessToken: mapboxgl.accessToken,
+      mapboxgl: mapboxgl,
+      marker: false,
+      placeholder: 'Search for an address'
+    }), 'top-left');
 
-      if (!map) {
-        throw new Error("Map object could not be initialized.");
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    map.on('load', () => {
+      console.log('Map style loaded.');
+
+      if (!map.getLayer(interactiveLayerId)) {
+        console.error(`Layer "${interactiveLayerId}" not found.`);
+        document.getElementById('map').innerHTML = '<div style="padding:30px;text-align:center;color:red;">Error: Required data layer not found in map style.</div>';
+        return;
       }
 
-      // --- Controls ---
-      const geocoder = new MapboxGeocoder({
-        accessToken: mapboxgl.accessToken,
-        mapboxgl: mapboxgl,
-        marker: false,
-        placeholder: 'Search for an address'
+      map.on('mouseenter', interactiveLayerId, (e) => {
+        map.getCanvas().style.cursor = 'pointer';
+        if (!e.features.length) return;
+
+        const props = e.features[0].properties;
+        const lngLat = e.lngLat;
+
+        const branchName = props["Branch Name"] || 'Branch name unavailable';
+        const address = props["Branch Address"] || 'No address';
+        const councilDistrict = props["Council District "] || props["Council District"] || 'Unknown';
+        const photoUrl = props["CM Photo"] || '';
+
+        const popupHTML = `
+          <div class="popup-content">
+            <strong>${branchName}</strong><br/>
+            ${address}<br/>
+            <strong>Council District:</strong> ${councilDistrict}<br/>
+            ${photoUrl ? `<img src="${photoUrl}" alt="Council District ${councilDistrict}" onerror="this.style.display='none';">` : ''}
+          </div>
+        `;
+
+        if (hoverPopup) hoverPopup.remove();
+        hoverPopup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: [0, -15] })
+          .setLngLat(lngLat)
+          .setHTML(popupHTML)
+          .addTo(map);
       });
-      map.addControl(geocoder, 'top-left');
-      map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-      // --- Map Events ---
-      map.on('load', () => {
-        console.log('Map style loaded successfully.'); // Log success on load
-
-        // Check if the interactive layer exists in the loaded style
-        if (!map.getLayer(interactiveLayerId)) {
-          // Log error if layer not found - THIS SHOULD BE FIXED NOW
-          console.error(`Error: Layer "${interactiveLayerId}" not found in the style "${mapStyle}". Please verify the layer ID in Mapbox Studio and in this script.`);
-          mapContainer.innerHTML = `<div style="padding: 30px; text-align: center; color: red; font-weight: bold;">Error loading map data: Required layer '${interactiveLayerId}' not found. Please check the configuration.</div>`;
-          return; // Stop if layer is missing
-        } else {
-          // Log success if layer found and attach interactions
-          console.log(`Layer "${interactiveLayerId}" found. Attaching interactions.`);
-          attachMapInteractions();
+      map.on('mouseleave', interactiveLayerId, () => {
+        map.getCanvas().style.cursor = '';
+        if (hoverPopup) {
+          hoverPopup.remove();
+          hoverPopup = null;
         }
-      }); // End map.on('load')
-
-      // --- Error Handling ---
-      map.on('error', (e) => {
-          // This catches Mapbox errors, including the persistent style error
-          console.error('A Mapbox GL error occurred:', e.error ? e.error.message : e);
-          // Display a generic error if the style fails to load properly
-          // Check if the style itself failed, which is likely the case for the "Bare objects invalid" error
-          if (!map.isStyleLoaded() || (e.error && e.error.message.includes("Bare objects invalid"))) {
-             mapContainer.innerHTML = `<div style="padding: 30px; text-align: center; color: orange; font-weight: bold;">Map Warning: The base map style has an issue that needs fixing in Mapbox Studio (Error: ${e.error ? e.error.message : 'Style Error'}). Some elements might not display correctly.</div>`;
-          }
       });
+    });
 
-    } catch (error) {
-        console.error("Failed to initialize the map:", error);
-        mapContainer.innerHTML = `<div style="padding: 30px; text-align: center; color: red; font-weight: bold;">Could not initialize the map. ${error.message}</div>`;
-    }
+    map.on('error', (e) => {
+      console.error('Mapbox error:', e.error?.message || e);
+      if (e.error && e.error.message.includes("Bare objects invalid")) {
+        document.getElementById('map').innerHTML = '<div style="padding:30px;text-align:center;color:orange;">Map style has an issue. Check Mapbox Studio for invalid expressions.</div>';
+      }
+    });
 
-    // --- Interaction Logic ---
-    function attachMapInteractions() {
-        // --- MouseEnter Event ---
-        map.on('mouseenter', interactiveLayerId, (e) => {
-          map.getCanvas().style.cursor = 'pointer';
-
-          if (!e.features || e.features.length === 0) return;
-
-          const feature = e.features[0];
-          const props = feature.properties;
-          const lngLat = e.lngLat;
-
-          if (!props) {
-              console.warn('Hovered feature has no properties object:', feature);
-              return;
-          }
-
-          // Extract data safely
-          const branchName = props["Branch Name"] || 'Branch name unavailable';
-          const address = props["Branch Address"] || 'No address provided';
-          const councilDistrict = props["Council District "] || props["Council District"] || 'Unavailable'; // Check both variations
-          const photoUrl = props["CM Photo"] || '';
-
-          // Construct popup HTML
-          const popupHTML = `
-            <div class="popup-content">
-              <strong>${branchName}</strong><br/>
-              ${address}<br/>
-              <strong>Council District:</strong> ${councilDistrict}<br/>
-              ${photoUrl ? `<img src="${photoUrl}" alt="Photo for Council District ${councilDistrict}" onerror="this.style.display='none'; this.alt='Image failed to load'; console.error('Popup image failed to load:', this.src);">` : ''}
-            </div>
-          `;
-
-          // Manage popup
-          if (hoverPopup) hoverPopup.remove();
-          hoverPopup = new mapboxgl.Popup({
-            closeButton: false,
-            closeOnClick: false,
-            offset: [0, -15],
-            maxWidth: '280px'
-          })
-            .setLngLat(lngLat)
-            .setHTML(popupHTML)
-            .addTo(map);
-        });
-
-        // --- MouseLeave Event ---
-        map.on('mouseleave', interactiveLayerId, () => {
-          map.getCanvas().style.cursor = '';
-          if (hoverPopup) {
-            hoverPopup.remove();
-            hoverPopup = null;
-          }
-        });
-    } // End attachMapInteractions
-
-    // --- Instructions Box Logic ---
-    if (closeButton && instructionsContainer) {
-      closeButton.addEventListener('click', () => {
-        instructionsContainer.style.display = 'none';
-      });
-    } else {
-      console.warn('Instructions container or close button element not found.');
-    }
-
+    // Close instruction panel
+    document.getElementById('close-instructions').addEventListener('click', () => {
+      document.getElementById('instructions-container').style.display = 'none';
+    });
   </script>
 </body>
 </html>
