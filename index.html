@@ -91,7 +91,7 @@
       zoom: 11
     });
 
-    const interactiveLayerId = 'updated_help_sheet_with-corre-4dw64w';
+    const interactiveLayerId = 'updated-help-sheet-with-corre-4dw64w';
     let hoverPopup = null;
 
     map.addControl(new MapboxGeocoder({
@@ -152,11 +152,10 @@
     map.on('error', (e) => {
       console.error('Mapbox error:', e.error?.message || e);
       if (e.error && e.error.message.includes("Bare objects invalid")) {
-        document.getElementById('map').innerHTML = '<div style="padding:30px;text-align:center;color:orange;">Map style has an issue. Check Mapbox Studio for invalid expressions.</div>';
+        document.getElementById('map').innerHTML = '<div style="padding:30px;text-align:center;color:orange;">Map style has an issue. Check Mapbox Studio for invalid expressions like bare objects not wrapped in ["literal", ...].</div>';
       }
     });
 
-    // Close instruction panel
     document.getElementById('close-instructions').addEventListener('click', () => {
       document.getElementById('instructions-container').style.display = 'none';
     });
