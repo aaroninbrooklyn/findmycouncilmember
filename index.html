@@ -1,139 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Rep My Branch Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
-  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" rel="stylesheet" />
+    <meta charset="utf-8" />
+    <title>Rep My Branch Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" rel="stylesheet" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
 
-  <style>
-    body { margin: 0; padding: 0; font-family: sans-serif; }
-    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-    #instructions-container {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 15px;
-      border-radius: 8px;
-      max-width: 320px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      z-index: 10;
-    }
-    .popup-content {
-      padding: 12px;
-      border-radius: 6px;
-      background-color: white;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-      font-size: 14px;
-      max-width: 280px;
-      line-height: 1.4;
-    }
-    .popup-content strong { display: block; color: #1a5f9e; margin-bottom: 4px; }
-    .popup-content .address { font-size: 0.9em; color: #555; margin-bottom: 8px; }
-    .popup-content img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 4px;
-      margin-top: 10px;
-      border: 1px solid #ddd;
-    }
-    #close-instructions {
-      background: none;
-      border: none;
-      font-size: 20px;
-      font-weight: bold;
-      position: absolute;
-      top: 5px;
-      right: 10px;
-      cursor: pointer;
-      color: #555;
-    }
-    #close-instructions:hover {
-      color: #000;
-    }
-  </style>
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #instructions-container {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 320px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+        }
+
+        .popup-content {
+            padding: 12px;
+            border-radius: 6px;
+            background-color: white;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+            font-size: 14px;
+            max-width: 280px;
+            line-height: 1.4;
+        }
+
+        .popup-content strong {
+            display: block;
+            color: #1a5f9e;
+            margin-bottom: 4px;
+        }
+
+        .popup-content .address {
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .popup-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+        }
+
+        #close-instructions {
+            background: none;
+            border: none;
+            font-size: 20px;
+            font-weight: bold;
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            cursor: pointer;
+            color: #555;
+        }
+
+        #close-instructions:hover {
+            color: #000;
+        }
+    </style>
 </head>
 <body>
 
-<div id="map"></div>
+    <div id="map"></div>
 
-<div id="instructions-container">
-  <button id="close-instructions" aria-label="Close instructions">&times;</button>
-  <img src="https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/MapInstructionsImage.jpg" alt="Map instructions">
-  <p>Hover over a library branch to see its Council District. Use the search bar for specific addresses.</p>
-</div>
+    <div id="instructions-container">
+        <button id="close-instructions" aria-label="Close instructions">&times;</button>
+        <img src="https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/MapInstructionsImage.jpg" alt="Map instructions">
+        <p>Hover over a library branch to see its Council District. Use the search bar for specific addresses.</p>
+    </div>
 
-<script>
-  mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
+    <script>
+        mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN'; // Replace with your actual token
+        const mapStyle = 'mapbox://styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy';
+        const targetLayerId = 'bpl-branches'; //  ID of the layer you want to interact with.
 
-  const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy',
-    center: [-73.95, 40.65],
-    zoom: 11
-  });
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: mapStyle,
+            center: [-73.95, 40.65],
+            zoom: 11
+        });
 
-  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        map.addControl(new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+            mapboxgl: mapboxgl,
+            marker: false,
+            placeholder: 'Search NYC address'
+        }), 'top-left');
 
-  map.addControl(new MapboxGeocoder({
-    accessToken: mapboxgl.accessToken,
-    mapboxgl: mapboxgl,
-    marker: false,
-    placeholder: 'Search NYC address'
-  }), 'top-left');
+        let hoverPopup = null;
 
-  const interactiveLayerId = 'bpl-branches';
-  let hoverPopup = null;
+        map.on('load', () => {
+            // Check if the layer exists *after* the map has loaded.  This is CRUCIAL.
+            if (!map.getLayer(targetLayerId)) {
+                console.error(`Layer "${targetLayerId}" not found in the map style!`);
+                alert(`Error: Layer "${targetLayerId}" not found.  Check the layer name in your Mapbox Studio style, and ensure it's added to the style.`);
+                return; // IMPORTANT: Stop execution if the layer doesn't exist.
+            }
 
-  map.on('load', () => {
-    if (!map.getLayer(interactiveLayerId)) {
-      alert(`Layer "${interactiveLayerId}" not found. Double-check the name in Mapbox Studio.`);
-      return;
-    }
+            map.on('mouseenter', targetLayerId, (e) => {
+                map.getCanvas().style.cursor = 'pointer';
 
-    map.on('mouseenter', interactiveLayerId, (e) => {
-      map.getCanvas().style.cursor = 'pointer';
+                const props = e.features[0].properties || {};
+                const branchName = props["Branch Name"] || 'Unknown';
+                const address = props["Branch Address"] || 'Unknown';
+                const district = props["Council District"] || 'Unknown';
+                const photo = props["CM Photo"] || '';
 
-      const props = e.features[0].properties || {};
-      const branchName = props["Branch Name"] || 'Unknown';
-      const address = props["Branch Address"] || 'Unknown';
-      const district = props["Council District"] || 'Unknown';
-      const photo = props["CM Photo"] || '';
+                const popupHTML = `
+                    <div class="popup-content">
+                        <strong>${branchName}</strong>
+                        <div class="address">${address}</div>
+                        <strong>Council District: ${district}</strong>
+                        ${photo ? `<img src="${photo}" alt="CM Photo" onerror="this.style.display='none';">` : ''}
+                    </div>
+                `;
 
-      const popupHTML = `
-        <div class="popup-content">
-          <strong>${branchName}</strong>
-          <div class="address">${address}</div>
-          <strong>Council District: ${district}</strong>
-          ${photo ? `<img src="${photo}" alt="CM Photo" onerror="this.style.display='none';">` : ''}
-        </div>
-      `;
+                if (hoverPopup) hoverPopup.remove();
+                hoverPopup = new mapboxgl.Popup({
+                    closeButton: false,
+                    closeOnClick: false,
+                    offset: [0, -15]
+                }).setLngLat(e.lngLat).setHTML(popupHTML).addTo(map);
+            });
 
-      if (hoverPopup) hoverPopup.remove();
-      hoverPopup = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-        offset: [0, -15]
-      }).setLngLat(e.lngLat).setHTML(popupHTML).addTo(map);
-    });
+            map.on('mouseleave', targetLayerId, () => {
+                map.getCanvas().style.cursor = '';
+                if (hoverPopup) {
+                    hoverPopup.remove();
+                    hoverPopup = null;
+                }
+            });
+        });
 
-    map.on('mouseleave', interactiveLayerId, () => {
-      map.getCanvas().style.cursor = '';
-      if (hoverPopup) {
-        hoverPopup.remove();
-        hoverPopup = null;
-      }
-    });
-  });
-
-  document.getElementById('close-instructions').addEventListener('click', () => {
-    document.getElementById('instructions-container').style.display = 'none';
-  });
-</script>
-
+        document.getElementById('close-instructions').addEventListener('click', () => {
+            document.getElementById('instructions-container').style.display = 'none';
+        });
+    </script>
 </body>
 </html>
