@@ -1,70 +1,128 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Mapbox Example</title>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
-    <style>
-        body { margin: 0; padding: 0; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-    </style>
-</head>
-<body>
-    <div id="map"></div>
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
-    <script>
-        mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
+mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
 
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy',
-            center: [-73.95, 40.65],
-            zoom: 11
-        });
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/aaroninbrooklyn/cm97wvhu900km01qu4y372sfy',
+    center: [-73.95, 40.65],
+    zoom: 11
+});
 
-        const geocoder = new MapboxGeocoder({
-            accessToken: mapboxgl.accessToken,
-            mapboxgl: mapboxgl,
-            marker: false,
-            placeholder: 'Search for an address'
-        });
+const geocoder = new MapboxGeocoder({
+    accessToken: mapboxgl.accessToken,
+    mapboxgl: mapboxgl,
+    marker: false,
+    placeholder: 'Search for an address'
+});
 
-        map.addControl(geocoder);
-        map.addControl(new mapboxgl.NavigationControl());
+map.addControl(geocoder);
+map.addControl(new mapboxgl.NavigationControl());
 
-        map.on('load', () => {
-            // Click on BPL Council layer
-            map.on('click', 'bplcouncilmap', (e) => {
-                const props = e.features[0].properties;
-                const lngLat = e.lngLat;
+let hoverPopup = null; // To store the hover popup instance
 
-                const branchName = props["Branch Name"] || 'Branch name unavailable';
-                const councilMember = props["Council Member Name"] || 'Unavailable';
-                const officeAddress = props["District Office Address"] || 'Unavailable';
-                const photoUrl = props["CM Photo"] || '';
+map.on('load', () => {
+    // Display instruction image as a popup on map load
+    const instructionsImageUrl = 'https://github.com/aaroninbrooklyn/findmycouncilmember/blob/d03398cb91580f629c99d3c6d76c3d0e5c2b345b/assets/MapInstructionsImage.jpg?raw=true'; // Use the raw URL for direct image access
 
-                const popupHTML = `
-                    <strong>${branchName}</strong><br/><br/>
-                    <strong>Represented by:</strong><br/>
-                    <strong>Council Member:</strong> ${councilMember}<br/>
-                    <strong>District Office Address:</strong> ${officeAddress}<br/><br/>
-                    <img src="${photoUrl}" alt="Council Member Photo" style="width:100%; max-width:240px; border-radius:4px;">
-                `;
+    const instructionPopup = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        anchor: 'top-right', // Position the popup in the top right
+        offset: [15, 15] // Adjust offset as needed
+    })
+    .setLngLat(map.getCenter()) // Center the popup initially
+    .setHTML(`<img src="${instructionsImageUrl}" alt="Map Instructions" style="max-width: 300px; border: 1px solid #ccc; border-radius: 5px;">`)
+    .addTo(map);
 
-                new mapboxgl.Popup()
-                    .setLngLat(lngLat)
-                    .setHTML(popupHTML)
-                    .addTo(map);
-            });
+    // Make the instruction popup draggable
+    instructionPopup.getElement().style.cursor = 'grab';
+    let isDragging = false;
+    let startX, startY, startLngLat;
 
-            map.on('mouseenter', 'bplcouncilmap', () => {
-                map.getCanvas().style.cursor = 'pointer';
-            });
-            map.on('mouseleave', 'bplcouncilmap', () => {
-                map.getCanvas().style.cursor = '';
-            });
-        });
+    instructionPopup.getElement().addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        startLngLat = instructionPopup.getLngLat();
+        instructionPopup.getElement().style.cursor = 'grabbing';
+    });
 
-        // Optional: Keep geocoder logic as-is unless you want to show rep info there too
-    </script>
-</body>
-</html>
+    map.on('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        // Convert pixel movement to map coordinates (approximate)
+        const pixelsToDegrees = map.transform.pixelsToDegrees;
+        const lngDiff = pixelsToDegrees(dx, 0)[0];
+        const latDiff = pixelsToDegrees(0, dy)[1];
+
+        instructionPopup.setLngLat([startLngLat.lng - lngDiff, startLngLat.lat - latDiff]);
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            instructionPopup.getElement().style.cursor = 'grab';
+        }
+    });
+
+    // Click on BPL Council layer
+    map.on('click', 'bplcouncilmap', (e) => {
+        const props = e.features[0].properties;
+        const lngLat = e.lngLat;
+
+        const branchName = props["Branch Name"] || 'Branch name unavailable';
+        const councilMember = props["Council Member Name"] || 'Unavailable';
+        const officeAddress = props["District Office Address"] || 'Unavailable';
+        const photoUrl = props["CM Photo"] || '';
+
+        const popupHTML = `
+            <strong>${branchName}</strong><br/><br/>
+            <strong>Represented by:</strong><br/>
+            <strong>Council Member:</strong> ${councilMember}<br/>
+            <strong>District Office Address:</strong> ${officeAddress}<br/><br/>
+            <img src="${photoUrl}" alt="Council Member Photo" style="width:100%; max-width:240px; border-radius:4px;">
+        `;
+
+        new mapboxgl.Popup()
+            .setLngLat(lngLat)
+            .setHTML(popupHTML)
+            .addTo(map);
+    });
+
+    map.on('mouseenter', 'bplcouncilmap', (e) => {
+        map.getCanvas().style.cursor = 'pointer';
+        const props = e.features[0].properties;
+        const lngLat = e.lngLat;
+
+        const branchName = props["Branch Name"] || 'Branch name unavailable';
+
+        const popupHTML = `
+            <strong>${branchName}</strong>
+        `;
+
+        // If a hover popup already exists, remove it
+        if (hoverPopup) {
+            hoverPopup.remove();
+        }
+
+        hoverPopup = new mapboxgl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            offset: [0, -15] // Adjust vertical offset if needed
+        })
+            .setLngLat(lngLat)
+            .setHTML(popupHTML)
+            .addTo(map);
+    });
+
+    map.on('mouseleave', 'bplcouncilmap', () => {
+        map.getCanvas().style.cursor = '';
+        if (hoverPopup) {
+            hoverPopup.remove();
+            hoverPopup = null; // Reset the hover popup instance
+        }
+    });
+});
+
+// Optional: Keep geocoder logic as-is unless you want to show rep info there too
