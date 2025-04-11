@@ -1,111 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>BPL Branches by Council District</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
-  <style>
-    body { margin: 0; padding: 0; font-family: sans-serif; }
-    #map { position: absolute; top: 0; left: 300px; right: 0; bottom: 0; }
+    <meta charset="utf-8" />
+    <title>BPL Branches by Council District</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
 
-    #sidebar {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 300px;
-      height: 100%;
-      background-color: #fff;
-      z-index: 1;
-      overflow: auto;
-      padding: 10px;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-    }
+        #map {
+            position: absolute;
+            top: 0;
+            left: 300px;
+            right: 0;
+            bottom: 0;
+        }
 
-    #sidebar img {
-      width: 100%;
-      border-radius: 5px;
-    }
+        #sidebar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 300px;
+            height: 100%;
+            background-color: #fff;
+            z-index: 1;
+            overflow: auto;
+            padding: 10px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
 
-    .mapboxgl-popup {
-      max-width: 300px;
-      font: 14px/1.5 sans-serif;
-    }
+        #sidebar img {
+            width: 100%;
+            border-radius: 5px;
+        }
 
-    .mapboxgl-popup-content strong {
-      display: block;
-      font-weight: bold;
-      margin-top: 4px;
-    }
-  </style>
+        .mapboxgl-popup {
+            max-width: 300px;
+            font: 14px/1.5 sans-serif;
+        }
+
+        .mapboxgl-popup-content strong {
+            display: block;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+    </style>
 </head>
 <body>
-  <div id="sidebar">
-    <img src="https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/MapInstructionsImage.jpg" alt="Map Instructions" />
-  </div>
-  <div id="map"></div>
+    <div id="sidebar">
+        <img src="https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/MapInstructionsImage.jpg" alt="Map Instructions" />
+    </div>
+    <div id="map"></div>
 
-  <script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/aaroninbrooklyn/cm98pl66o001601sa6bcq2ec6',
-      center: [-73.95, 40.65],
-      zoom: 10
-    });
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg'; // Replace with your actual access token
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/aaroninbrooklyn/cm98pl66o001601sa6bcq2ec6', // Correct style URL
+            center: [-73.95, 40.65],
+            zoom: 10
+        });
 
-    const iconUrl = 'https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/bklynlb_icon.svg';
-    const geojsonUrl = 'https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/bpl-branches-clean.geojson';
+        const iconUrl = 'https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/bklynlb_icon.svg';
+        const geojsonUrl = 'https://raw.githubusercontent.com/aaroninbrooklyn/findmycouncilmember/main/assets/bpl-branches-clean.geojson';
 
-    map.on('load', () => {
-      map.loadImage(iconUrl, (error, image) => {
-        if (error) throw error;
-        map.addImage('branch-icon', image);
+        map.on('load', () => {
+            map.loadImage(iconUrl, (error, image) => {
+                if (error) {
+                    console.error("Error loading image:", error); // Improved error handling
+                    return; // Important: Exit if image loading fails
+                }
+                map.addImage('branch-icon', image);
 
-        fetch(geojsonUrl)
-          .then(res => res.json())
-          .then(data => {
-            map.addSource('branches', {
-              type: 'geojson',
-              data: data
+                fetch(geojsonUrl)
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error(`HTTP error! status: ${res.status}`); // Handle HTTP errors
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        map.addSource('branches', {
+                            type: 'geojson',
+                            data: data
+                        });
+
+                        map.addLayer({
+                            id: 'branches',
+                            type: 'symbol',
+                            source: 'branches',
+                            layout: {
+                                'icon-image': 'branch-icon',
+                                'icon-size': 0.08,
+                                'icon-allow-overlap': true
+                            }
+                        });
+
+                        let popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false });
+
+                        map.on('mouseenter', 'branches', (e) => {
+                            map.getCanvas().style.cursor = 'pointer';
+                            if (e.features && e.features.length > 0) { // Check if features exist
+                                const props = e.features[0].properties;
+                                const coords = e.features[0].geometry.coordinates.slice();
+
+                                const html = `
+                                    <strong>Branch Name:</strong> ${props.name}<br>
+                                    <strong>Address:</strong> ${props.address}<br>
+                                    <strong>Council District #:</strong> ${props.district}<br>
+                                    <strong>NYC Councilmember:</strong> ${props.member}
+                                `;
+
+                                popup.setLngLat(coords).setHTML(html).addTo(map);
+                            }
+                        });
+
+                        map.on('mouseleave', 'branches', () => {
+                            map.getCanvas().style.cursor = '';
+                            popup.remove();
+                        });
+                    })
+                    .catch(error => {
+                        console.error("Error fetching or processing GeoJSON:", error); // Handle fetch/json errors
+                    });
             });
-
-            map.addLayer({
-              id: 'branches',
-              type: 'symbol',
-              source: 'branches',
-              layout: {
-                'icon-image': 'branch-icon',
-                'icon-size': 0.08,
-                'icon-allow-overlap': true
-              }
-            });
-
-            let popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false });
-
-            map.on('mouseenter', 'branches', (e) => {
-              map.getCanvas().style.cursor = 'pointer';
-              const props = e.features[0].properties;
-              const coords = e.features[0].geometry.coordinates.slice();
-
-              const html = `
-                <strong>Branch Name:</strong> ${props.name}<br>
-                <strong>Address:</strong> ${props.address}<br>
-                <strong>Council District #:</strong> ${props.district}<br>
-                <strong>NYC Councilmember:</strong> ${props.member}
-              `;
-
-              popup.setLngLat(coords).setHTML(html).addTo(map);
-            });
-
-            map.on('mouseleave', 'branches', () => {
-              map.getCanvas().style.cursor = '';
-              popup.remove();
-            });
-          });
-      });
-    });
-  </script>
+        });
+    </script>
 </body>
 </html>
